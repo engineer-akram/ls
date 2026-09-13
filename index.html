@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Web App Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+        
+        /* Login Screen Styles */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        
+        .login-box h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .login-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .login-box button:hover {
+            background: #5a67d8;
+        }
+        
+        .error-msg {
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* Main Content (hidden initially) */
+        .main-content {
+            display: none;
+            height: 100vh;
+            flex-direction: column;
+        }
+        
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+        }
+        
+        .logout-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .logout-btn:hover {
+            background: #c53030;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginContainer" class="login-container">
+        <div class="login-box">
+            <h2>🔐 Secure Access</h2>
+            <input type="text" id="username" placeholder="Username" autocomplete="off">
+            <input type="password" id="password" placeholder="Password" autocomplete="off">
+            <button onclick="attemptLogin()">Login</button>
+            <div id="errorMsg" class="error-msg">Invalid credentials</div>
+        </div>
+    </div>
+    
+    <!-- Main Content (hidden until login) -->
+    <div id="mainContent" class="main-content">
+        <iframe id="appFrame" src="about:blank"></iframe>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+
+    <script>
+        // ========== CONFIGURATION ==========
+        // Change these credentials as needed
+        const VALID_USERNAME = "admn";
+        const VALID_PASSWORD = "gepco2025";
+        
+        const APP_URL = "https://script.google.com/macros/s/AKfycbxwt0tz64_y2hhc3zmScA20d1mMAhVqvgembhI03ZQCwc5_eaOqvPwudAaS1cmslzainA/exec";
+        
+        // Check if user is already logged in (session storage)
+        function checkAuth() {
+            const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+            if (isLoggedIn === "true") {
+                showMainContent();
+            } else {
+                showLoginScreen();
+            }
+        }
+        
+        // Show main content with iframe
+        function showMainContent() {
+            document.getElementById("loginContainer").style.display = "none";
+            const mainContent = document.getElementById("mainContent");
+            mainContent.style.display = "flex";
+            
+            // Load the iframe only when showing main content
+            const iframe = document.getElementById("appFrame");
+            if (iframe.src === "about:blank" || iframe.src === "") {
+                iframe.src = APP_URL;
+            }
+        }
+        
+        // Show login screen
+        function showLoginScreen() {
+            document.getElementById("loginContainer").style.display = "flex";
+            document.getElementById("mainContent").style.display = "none";
+            
+            // Clear login fields
+            document.getElementById("username").value = "";
+            document.getElementById("password").value = "";
+            
+            // Clear iframe
+            const iframe = document.getElementById("appFrame");
+            iframe.src = "about:blank";
+        }
+        
+        // Attempt login
+        function attemptLogin() {
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorMsg = document.getElementById("errorMsg");
+            
+            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+                sessionStorage.setItem("isLoggedIn", "true");
+                errorMsg.style.display = "none";
+                showMainContent();
+            } else {
+                errorMsg.style.display = "block";
+                // Hide error after 3 seconds
+                setTimeout(() => {
+                    errorMsg.style.display = "none";
+                }, 3000);
+            }
+        }
+        
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem("isLoggedIn");
+            showLoginScreen();
+        }
+        
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                attemptLogin();
+            }
+        }
+        
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            checkAuth();
+            
+            // Add enter key listeners
+            const usernameInput = document.getElementById("username");
+            const passwordInput = document.getElementById("password");
+            
+            usernameInput.addEventListener("keypress", handleKeyPress);
+            passwordInput.addEventListener("keypress", handleKeyPress);
+        });
+        
+        // Optional: Prevent right-click on iframe
+        const iframe = document.getElementById("appFrame");
+        iframe.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            return false;
+        });
+    </script>
+</body>
+</html>
